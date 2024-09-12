@@ -1,27 +1,46 @@
-# Specification for the Communication Layer
+# Specification for the TP Communication layer
+
+The communication layer is the program that allow user to create channel where you can communicate with other people through channel by sending/receiving bytes.
+
+## Broker
+Broker is the entity that will manage the connection between the task.
+Broker is doing different roles such as accepting and sending connection request.
+A Broker can perform **multiple task** at once without limit.
+
+### Methods
+- **`Broker(String name)`**: Constructor of the Broker with a specified **unique** name.
+- **`connect(String name, int port)`**: Try to connect the broker to an other one with a unique name of a Broker that you and a specified port. If the connection is a success, the Broker return the channel where the communication will be apply.
+- **`accept(int port)`**: Accepts incoming connections on the specified port. This method **blocks** until a connection is made and then will create a Channel on accepting. Trying to accept on the **same port** then an other Broker that have the **same name** will throw an Exception
+
+## Channel
+Channel is the entity where task will send and receive through data.  
+Channel is **FIFO** and **Lossless**.
+Channel is **bidirectional**.  
+Channel is **multi-threaded** but reading/writing at the same time with multiple tasks can't guarantee data consistency.
+
+### Methods
+- **`read(byte[] bytes, int offset, int length)`**: Reads data from the channel into the specified byte array starting at the given offset and up to the specified length. This methods **blocks** until the number of bytes (length) is read. 
+Returns the number of bytes read, -1 if the connection is closed
+- **`write(byte[] bytes, int offset, int length)`**: Writes data to the channel from the specified byte array starting at the given offset and up to the specified length. This methods **blocks** if there is no space left to the buffer channel.
+Returns the number of bytes written, -1 if the connection is closed
+- **`disconnect()`**: Disconnects the channel.
+- **`disconnected()`**: Checks if the channel is disconnected. Returns a boolean indicating the disconnection status.
 
 ## Task
-A task is an independent unit of work within the system. Each task has a unique identifier.
+A task represents a unit of work that interacts with a broker and can be executed.
+Task can talk to multiple Broker but **at least one**.
 
-## Communication Layer
-This layer is responsible for establishing and managing communication channels between tasks. It does not assume whether tasks run within the same process or the same machine.
-
-## Communication Channel
-A communication channel is a conduit through which tasks can send and receive bytes of data. Each channel is associated with two tasks - a sender and a receiver.
-
-## Methods
-- **`createChannel()`**: This method creates a new communication channel between the specified sender and receiver tasks.
-- **`connectToChannel()`**: This method connect the task to the channel to initialyze her into this.
-- **`disconnectToChannel()`**: This method disconnect the task to the channel to initialyze her into this.
-- **`send()`**: This method sends the specified data over the specified channel. It returns a boolean indicating whether the send operation was successful.
-- **`receive()`**: This method receives data from the specified channel. It returns the received data as a byte array.
-
-## Byte-Oriented Circular Buffers
-These buffers are used to implement the communication channels. They allow for efficient, non-blocking communication between tasks. The buffer is "circular" in that when it is full, new data overwrites the oldest data in the buffer.
-
-## Assumptions
-- **Tasks run within the same process**: The design of the communication layer assumes that all tasks are running within the same process to simplifies the implementation and allows for efficient communication.
-- **Use of byte-oriented circular buffers**: The design assumes the use of byte-oriented circular buffers to implement the communication channels. 
+### Methods
+- **`Task(Broker b, Runnable r)`**: Cronstructor of the Task with the first Broker linked to and a Runnable executable.
+- **`static Broker getBroker()`**: Get the first broker linked to.
 
 ## Testing
-The communication layer should be thoroughly tested to ensure its correct operation. Tests should cover all methods and consider edge cases, such as attempting to send data over a non-existent channel or receiving data from an empty buffer.
+The test is implemented through a **simple echo server**. This server accepts connections from any number of clients and echoes back anything a client sends.
+
+A test client will loop over and over the following steps:
+    - Connect to the server.
+    - Send a sequence of bytes, representing the numbers from 1 to 255.
+    - Test that these bytes are echoed properly by the server.
+    - Disconnect.
+
+Moreover, the test will involve **one server** and several clients.
