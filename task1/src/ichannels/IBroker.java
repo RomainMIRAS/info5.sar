@@ -1,11 +1,6 @@
-package task1;
+package ichannels;
 
-public abstract class Broker {
-	/**
-	 * Create a broker with the given name
-	 * @param name
-	 */
-	Broker(String name);
+public interface IBroker {
 	
 	/**
 	 * Connect to a server with the given name and port.
@@ -13,7 +8,7 @@ public abstract class Broker {
 	 * @param port
 	 * @return a Channel object representing the connection
 	 */
-	Channel connect(String name, int port);
+	public IChannel connect(String name, int port);
 	
 	/**
 	 * Accept a connection on the given port.
@@ -22,5 +17,5 @@ public abstract class Broker {
 	 * @param port
 	 * @return a Channel object representing the connection
 	 */
-	Channel accept(int port);
+	public IChannel accept(int port);
 }
