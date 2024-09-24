@@ -1,19 +1,19 @@
 package channels;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import ichannels.IBroker;
 import ichannels.IChannel;
 
 public class Broker implements IBroker {
 	private final String name;
-	private final ConcurrentHashMap<Integer, BlockingQueue<RendezVous>> rendezvousQueue;
-
+	private final ConcurrentHashMap<Integer, RendezVous> acceptRendezVous;
+	private final ConcurrentHashMap<Integer, RendezVous> pendingConnectRendezVous;
+	
 	public Broker(String name) {
 		this.name = name;
-		this.rendezvousQueue = new ConcurrentHashMap<>();
+		this.acceptRendezVous = new ConcurrentHashMap<>();
+		this.pendingConnectRendezVous = new ConcurrentHashMap<>();
 		BrokerManager.getInstance().registerBroker(name, this);
 	}
 
@@ -23,54 +23,40 @@ public class Broker implements IBroker {
 		if (remoteBroker == null) {
 			return null; // Remote broker doesn't exist
 		}
-
-		// Check if there's a matching rendezvous on the remote broker
-		RendezVous matchingRendezVous = remoteBroker.findMatchingRendezVous(port, RendezVous.RendezVousState.CONNECT);
-		if (matchingRendezVous != null) {
-			return matchingRendezVous.connect(this);
-		}
-
-		// If no matching rendezvous, create a new one
-		rendezvousQueue.putIfAbsent(port, new LinkedBlockingQueue<>());
-		BlockingQueue<RendezVous> queue = rendezvousQueue.get(port);
-		RendezVous rendezVous = new RendezVous(port, this, RendezVous.RendezVousState.CONNECT);
-		queue.offer(rendezVous);
-		IChannel channel = rendezVous.connect(remoteBroker);
-		queue.remove(rendezVous);
-		return channel;
+		RendezVous rendezVous = remoteBroker.getAcceptRendezVous(port);
+		if (rendezVous == null) {
+			rendezVous = new RendezVous(port);
+			remoteBroker.addWaitingConnection(rendezVous);
+		} 
+		return rendezVous.connecting();
 	}
 
 	@Override
 	public synchronized IChannel accept(int port) throws IllegalStateException {
-		// Check if there's a matching rendezvous on this broker
-		RendezVous matchingRendezVous = findMatchingRendezVous(port, RendezVous.RendezVousState.ACCEPT);
-		if (matchingRendezVous != null) {
-			IChannel channel = matchingRendezVous.accept();
-			rendezvousQueue.get(port).remove(matchingRendezVous);
-			return channel;
-		} else {
-			// If no matching rendezvous, create a new one
-			rendezvousQueue.putIfAbsent(port, new LinkedBlockingQueue<>());
-			BlockingQueue<RendezVous> queue = rendezvousQueue.get(port);
-			RendezVous rendezVous = new RendezVous(port, this, RendezVous.RendezVousState.ACCEPT);
-			queue.offer(rendezVous);
-			IChannel channel = rendezVous.accept();
-			rendezvousQueue.get(port).remove(rendezVous);
-			return channel;
+		//check if the acceptRendezVous is already set
+		if (acceptRendezVous.containsKey(port)) {
+			throw new IllegalStateException("Already an listing on this port");
 		}
+		RendezVous rendezVous;
+
+		if (pendingConnectRendezVous.containsKey(port)) {
+			rendezVous = pendingConnectRendezVous.get(port);
+		} else {
+			rendezVous = new RendezVous(port);
+			acceptRendezVous.put(port, rendezVous);
+		}
+		
+		IChannel channel = rendezVous.accepting();
+		acceptRendezVous.remove(port);
+		return channel;
 	}
 
-	// New method to find a matching rendezvous
-	private RendezVous findMatchingRendezVous(int port, RendezVous.RendezVousState state) {
-		BlockingQueue<RendezVous> queue = rendezvousQueue.get(port);
-		if (queue != null && !queue.isEmpty()) {
-			for (RendezVous rendezVous : queue) {
-				if (rendezVous.getState() == state) {
-					return rendezVous;
-				}
-			}
-		}
-		return null;
+	private void addWaitingConnection(RendezVous rendezVous) {
+		pendingConnectRendezVous.put(rendezVous.getPort(), rendezVous);
+	}
+
+	private RendezVous getAcceptRendezVous(int port) {
+		return acceptRendezVous.get(port);
 	}
 
 	public String getName() {
