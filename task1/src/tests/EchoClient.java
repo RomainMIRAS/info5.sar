@@ -4,6 +4,7 @@ import channels.Broker;
 import channels.Task;
 import ichannels.IBroker;
 import ichannels.IChannel;
+import ichannels.DisconnectedException;
 
 public class EchoClient {
     public static void main(String[] args) {
@@ -20,19 +21,24 @@ public class EchoClient {
             sendData[i] = (byte) (i + 1);
         }
         
-        channel.write(sendData, 0, sendData.length);
-        
-        byte[] receiveData = new byte[255];
-        int bytesRead = channel.read(receiveData, 0, receiveData.length);
-        
-        for (int i = 0; i < bytesRead; i++) {
-            if (sendData[i] != receiveData[i]) {
-                System.out.println("Test failed at byte " + i);
-                return;
+        try {
+            channel.write(sendData, 0, sendData.length);
+            
+            byte[] receiveData = new byte[255];
+            int bytesRead = channel.read(receiveData, 0, receiveData.length);
+            
+            for (int i = 0; i < bytesRead; i++) {
+                if (sendData[i] != receiveData[i]) {
+                    System.out.println("Test failed at byte " + i);
+                    return;
+                }
             }
+            
+            System.out.println("Test passed");
+        } catch (DisconnectedException e) {
+            System.out.println("Test failed due to disconnection: " + e.getMessage());
+        } finally {
+            channel.disconnect();
         }
-        
-        System.out.println("Test passed");
-        channel.disconnect();
     }
 }
