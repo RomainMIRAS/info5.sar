@@ -53,8 +53,11 @@ public class EchoServer {
         }
         
         try {
-            channel.write(sendData, 0, sendData.length);
-            
+        	int byteWrite = 0;
+        	while (byteWrite < sendData.length) {
+         		byteWrite += channel.write(sendData, byteWrite, sendData.length - byteWrite);
+        	}
+        	
             byte[] receiveData = new byte[255];
             int bytesRead = channel.read(receiveData, 0, receiveData.length);
             

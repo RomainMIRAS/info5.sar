@@ -1,62 +1,62 @@
 package channels;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 import ichannels.IBroker;
 import ichannels.IChannel;
 
 public class Broker implements IBroker {
 	private final String name;
-	private final ConcurrentHashMap<Integer, RendezVous> acceptRendezVous;
-	private final ConcurrentHashMap<Integer, RendezVous> pendingConnectRendezVous;
+	private final HashMap<Integer, RendezVous> acceptRendezVous;
 	
 	public Broker(String name) {
 		this.name = name;
-		this.acceptRendezVous = new ConcurrentHashMap<>();
-		this.pendingConnectRendezVous = new ConcurrentHashMap<>();
-		BrokerManager.getInstance().registerBroker(name, this);
+		this.acceptRendezVous = new HashMap<>();
+		BrokerManager.getInstance().registerBroker(this);
 	}
-
+	
 	@Override
 	public synchronized IChannel connect(String remoteBrokerName, int port) {
 		Broker remoteBroker = BrokerManager.getInstance().getBroker(remoteBrokerName);
 		if (remoteBroker == null) {
 			return null; // Remote broker doesn't exist
 		}
-		RendezVous rendezVous = remoteBroker.getAcceptRendezVous(port);
-		if (rendezVous == null) {
-			rendezVous = new RendezVous(port);
-			remoteBroker.addWaitingConnection(rendezVous);
-		} 
-		return rendezVous.connecting();
+		return remoteBroker._connect(this, port);
+	}
+
+	private IChannel _connect(Broker broker, int port) {
+		RendezVous rendezVous = null;
+		synchronized (acceptRendezVous) {
+            rendezVous = acceptRendezVous.get(port);
+			while (rendezVous == null) {
+				try {
+					acceptRendezVous.wait();
+					rendezVous = acceptRendezVous.get(port);
+				} catch (InterruptedException e) {
+					// Do nothing
+				}
+				rendezVous = acceptRendezVous.get(port);
+			}
+			acceptRendezVous.remove(port);
+        }
+		return rendezVous.connect(broker,port);
 	}
 
 	@Override
 	public synchronized IChannel accept(int port) throws IllegalStateException {
-		//check if the acceptRendezVous is already set
-		if (acceptRendezVous.containsKey(port)) {
-			throw new IllegalStateException("Already an listing on this port");
-		}
-		RendezVous rendezVous;
-
-		if (pendingConnectRendezVous.containsKey(port)) {
-			rendezVous = pendingConnectRendezVous.get(port);
-		} else {
-			rendezVous = new RendezVous(port);
+		RendezVous rendezVous = null;
+		synchronized (acceptRendezVous) {
+			rendezVous = acceptRendezVous.get(port);
+			if (rendezVous != null) {
+				throw new IllegalStateException("Already accepting on port " + port);
+			}
+			rendezVous = new RendezVous();
 			acceptRendezVous.put(port, rendezVous);
+			acceptRendezVous.notifyAll();
 		}
-		
-		IChannel channel = rendezVous.accepting();
-		acceptRendezVous.remove(port);
-		return channel;
-	}
-
-	private void addWaitingConnection(RendezVous rendezVous) {
-		pendingConnectRendezVous.put(rendezVous.getPort(), rendezVous);
-	}
-
-	private RendezVous getAcceptRendezVous(int port) {
-		return acceptRendezVous.get(port);
+		IChannel ch;
+		ch = rendezVous.accept(this, port);
+		return ch;
 	}
 
 	public String getName() {

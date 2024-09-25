@@ -6,94 +6,140 @@ import ichannels.IChannel;
 public class Channel implements IChannel {
 	private CircularBuffer inputBuffer;
 	private CircularBuffer outputBuffer;
-	private volatile boolean localDisconnected = false;
-	private volatile boolean remoteDisconnected = false;
-
-	public Channel(CircularBuffer input, CircularBuffer output) {
-		this.inputBuffer = input;
-		this.outputBuffer = output;
+	private Channel remoteChannel; // The remote channel to which this channel is connected
+	private String rname;
+	private int port;
+	private boolean disconnected;
+	private boolean dangling;
+	private Broker broker;
+	
+	public Channel(Broker broker, int port) {
+		this.broker = broker;
+		inputBuffer = new CircularBuffer(1024);
+		this.port = port;
 	}
 
 	@Override
-	public synchronized int read(byte[] bytes, int offset, int length) throws DisconnectedException {
-		if (localDisconnected) {
+	public int read(byte[] bytes, int offset, int length) throws DisconnectedException {
+		if (disconnected) {
 			throw new DisconnectedException("Channel is locally disconnected");
 		}
-
 		int bytesRead = 0;
-		while (bytesRead < length && !(inputBuffer.empty() && remoteDisconnected)) {
-			try {
-				bytes[offset + bytesRead] = inputBuffer.pull();
-				bytesRead++;
-			} catch (IllegalStateException e) {
-				if (bytesRead == 0) {
-					try {
-						wait();
-					} catch (InterruptedException ie) {
-						Thread.currentThread().interrupt();
-						throw new DisconnectedException("Read operation interrupted");
+		try {
+			while (bytesRead == 0) {
+				if (inputBuffer.empty()) {
+					synchronized (inputBuffer) {
+						while (inputBuffer.empty()) {
+							if (dangling || disconnected)
+								throw new DisconnectedException("Channel is remotely disconnected");
+							try {
+								inputBuffer.wait();
+							} catch (InterruptedException e) {
+								// Do nothing
+							}
+						}
 					}
-				} else {
-					break;
+				}
+				
+				while (bytesRead < length && !inputBuffer.empty()) {				
+					byte value = inputBuffer.pull();
+					bytes[offset + bytesRead] = value;
+					bytesRead++;
+				}
+				
+				if (bytesRead != 0) {
+					synchronized (inputBuffer) {
+						inputBuffer.notify();
+					}
 				}
 			}
+			
+		} catch (DisconnectedException e) {
+			if (!disconnected) {
+				disconnected = true;
+				synchronized (outputBuffer) {
+					outputBuffer.notifyAll();
+				}
+			}
+			throw e;
 		}
-
-		if (bytesRead == 0 && remoteDisconnected) {
-			throw new DisconnectedException("Channel is remotely disconnected");
-		}
-
 		return bytesRead;
 	}
 
 	@Override
-	public synchronized int write(byte[] bytes, int offset, int length) throws DisconnectedException {
-		if (localDisconnected) {
+	public int write(byte[] bytes, int offset, int length) throws DisconnectedException {
+		if (disconnected) {
 			throw new DisconnectedException("Channel is locally disconnected");
 		}
-
 		int bytesWritten = 0;
-		while (bytesWritten < length && !remoteDisconnected) {
-			try {
-				outputBuffer.push(bytes[offset + bytesWritten]);
-				bytesWritten++;
-				notifyAll(); // Notify readers that data is available
-			} catch (IllegalStateException e) {
-				if (bytesWritten == 0) {
-					try {
-						wait();
-					} catch (InterruptedException ie) {
-						Thread.currentThread().interrupt();
-						throw new DisconnectedException("Write operation interrupted");
+		
+		while (bytesWritten == 0) {
+			if (outputBuffer.full()) {
+				synchronized (outputBuffer) {
+					while (outputBuffer.full()) {
+						if (disconnected)
+							throw new DisconnectedException("Channel is remotely disconnected");
+						if (dangling) {
+							return length;
+						}
+						try {
+							outputBuffer.wait();
+						} catch (InterruptedException e) {
+							// Do nothing
+						}
 					}
-				} else {
-					break;
+				}
+			}
+
+			while (bytesWritten < length && !outputBuffer.full()) {
+				byte value = bytes[offset + bytesWritten];
+				outputBuffer.push(value);
+				bytesWritten++;
+			}
+
+			if (bytesWritten != 0) {
+				synchronized (outputBuffer) {
+					outputBuffer.notify();
 				}
 			}
 		}
-
-		if (remoteDisconnected) {
-			// Silently drop bytes if remote side is disconnected
-			return length;
-		}
-
+		
 		return bytesWritten;
 	}
 
 	@Override
-	public synchronized void disconnect() {
-		localDisconnected = true;
-		notifyAll(); // Wake up any blocked read/write operations
+	public void disconnect() {
+		synchronized (this) {
+			if (disconnected) {
+				return;
+			}
+			disconnected = true;
+			this.remoteChannel.dangling = true;
+		}
+		synchronized (outputBuffer) {
+		    outputBuffer.notifyAll();
+		}
+		synchronized (inputBuffer) {
+			inputBuffer.notifyAll();
+		}
 	}
 
 	@Override
 	public boolean disconnected() {
-		return localDisconnected || (remoteDisconnected && inputBuffer.empty());
+		return disconnected;
 	}
 
 	// Method to be called when the remote side disconnects
 	public synchronized void remoteDisconnect() {
-		remoteDisconnected = true;
+		dangling = true;
 		notifyAll(); // Wake up any blocked read/write operations
+	}
+
+	public void connect(Channel connectChannel, String name) {
+		this.remoteChannel = connectChannel;
+		connectChannel.remoteChannel = this;
+		this.outputBuffer = connectChannel.inputBuffer;
+		connectChannel.outputBuffer = this.inputBuffer;
+		rname = name;
 	}
 }
