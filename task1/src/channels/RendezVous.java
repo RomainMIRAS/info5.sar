@@ -26,7 +26,7 @@ public class RendezVous {
 
 	public synchronized IChannel accept(Broker broker, int port) {
 		this.acceptBroker = broker;
-		acceptChannel = new Channel(acceptBroker, port);
+		acceptChannel = new Channel();
 		if (connectChannel != null) {
 			acceptChannel.connect(connectChannel,acceptBroker.getName());
 			notify();
@@ -38,7 +38,7 @@ public class RendezVous {
 
 	public synchronized IChannel connect(Broker broker, int port) {
 		this.connectBroker = broker;
-		connectChannel = new Channel(broker, port);
+		connectChannel = new Channel();
 		if (acceptChannel != null) {
 			connectChannel.connect(acceptChannel, connectBroker.getName());
 			notify();

@@ -7,16 +7,12 @@ public class Channel implements IChannel {
 	private CircularBuffer inputBuffer;
 	private CircularBuffer outputBuffer;
 	private Channel remoteChannel; // The remote channel to which this channel is connected
-	private String rname;
-	private int port;
+
 	private boolean disconnected;
 	private boolean dangling;
-	private Broker broker;
 	
-	public Channel(Broker broker, int port) {
-		this.broker = broker;
+	public Channel() {
 		inputBuffer = new CircularBuffer(1024);
-		this.port = port;
 	}
 
 	@Override
@@ -140,6 +136,5 @@ public class Channel implements IChannel {
 		connectChannel.remoteChannel = this;
 		this.outputBuffer = connectChannel.inputBuffer;
 		connectChannel.outputBuffer = this.inputBuffer;
-		rname = name;
 	}
 }
