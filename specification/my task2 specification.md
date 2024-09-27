@@ -43,7 +43,11 @@ Signature: byte[] receive();
 The method "receive" will return the oldest message send as a set of bytes.
 As indeed the message received is not split and is receive as one full.
 
+The receive will block while no message is send though the MessageQueue, it will until a the moment.
+
 The end of stream is the same as being as the messageQueue being disconnected, so the method will throw an exception (DisconnectedException). 
+
+In case of MessageQueue closed, this class allow to receive message if the was some left in the MessageQueue
 
 Note: notice that the disconnected exception does not always indicate an error, rarely in fact. The end of stream is an exceptional situation, but it is not an error. Remember that exceptions are not only for errors, but for exceptional situations, hence their name.
 The disconnected exception may give some extra information regarding an error if an internal error caused the messageQueue to disconnect.   
