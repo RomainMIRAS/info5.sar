@@ -18,4 +18,11 @@ public interface IBroker {
 	 * @return a Channel object representing the connection
 	 */
 	public IChannel accept(int port);
+
+	/**
+	 * Get the name of the broker.
+	 * 
+	 * @return the name of the broker
+	 */
+	String getName();
 }

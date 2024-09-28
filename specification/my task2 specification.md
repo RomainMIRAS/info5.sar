@@ -9,6 +9,8 @@ The typical use of messageQueues is by two tasks to establish a full-duplex comm
 
 A messageQueue is either open or closed. It is created open and it becomes closed when either side requests a disconnect. There is no notion of the end of stream for a open stream. To mark the end of a stream, the corresponding messageQueue is simply closed.
 
+NB : Both of this class are Thread-Safe on each method.
+
 # Message
 
 A Message is a set of byte with any longer to be send and receive on a channel.

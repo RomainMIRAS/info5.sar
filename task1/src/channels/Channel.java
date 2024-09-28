@@ -12,7 +12,7 @@ public class Channel implements IChannel {
 	private boolean dangling;
 	
 	public Channel() {
-		inputBuffer = new CircularBuffer(1024);
+		inputBuffer = new CircularBuffer(256);
 	}
 
 	@Override

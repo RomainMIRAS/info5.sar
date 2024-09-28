@@ -1,4 +1,4 @@
-package ichannels;
+package imessages;
 
 public interface IQueueBroker {
 	String name();

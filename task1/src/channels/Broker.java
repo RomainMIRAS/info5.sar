@@ -59,6 +59,7 @@ public class Broker implements IBroker {
 		return ch;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
