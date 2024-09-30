@@ -27,6 +27,7 @@ A QueueBroker can't connect with a Broker.
 # Sending / Reading
 
 Each MessageQueue have one Channel that is used to read/write byte and so this system is only an upper layer providing the guaranty to send message.
+This process guarantees protection from famine.
 
 ## Sending
 

@@ -1,5 +1,7 @@
 package messages;
 
+import java.util.concurrent.Semaphore;
+
 import ichannels.DisconnectedException;
 import ichannels.IChannel;
 import imessages.IMessageQueue;
@@ -7,13 +9,16 @@ import imessages.IMessageQueue;
 public class MessageQueue implements IMessageQueue {
 	
 	IChannel channel;
+	Semaphore semaphoreSend = new Semaphore(1,true);
+	Semaphore semaphoreReceive = new Semaphore(1,true);
 	
 	public MessageQueue(IChannel channel) {
 		this.channel = channel;
 	}
 
 	@Override
-	public synchronized void send(byte[] bytes, int offset, int length) throws DisconnectedException {
+	public void send(byte[] bytes, int offset, int length) throws DisconnectedException {
+	    semaphoreSend.acquireUninterruptibly();
 		try {
 			// send the length of the message
 			byte[] lengthBytes = new byte[4];
@@ -33,11 +38,14 @@ public class MessageQueue implements IMessageQueue {
 			}		
 		} catch (DisconnectedException e) {
 			throw e;
+		} finally {
+            semaphoreSend.release();
 		}
 	}
 
 	@Override
-	public synchronized byte[] receive() {
+	public byte[] receive() {
+		semaphoreReceive.acquireUninterruptibly();
 		try {
 			// read the length of the message
 			byte[] lengthBytes = new byte[4];
@@ -56,6 +64,9 @@ public class MessageQueue implements IMessageQueue {
 			return bytes;
 		} catch (DisconnectedException e) {
 			return null;
+		}
+		finally {
+			semaphoreReceive.release();
 		}
 	}
 
