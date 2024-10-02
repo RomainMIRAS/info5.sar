@@ -1,9 +1,8 @@
-# Overview: QueueBroker / MessageQueue
-The QueueBroker / MessageQueue system is a framework to send and receive messages using basic messageQueue and queueBroker.
-A MessageQueue is a communication messageQueue, a message.
+# Overview: QueueBroker / MessageQueue System Multi-Threaded
+The QueueBroker / MessageQueue system is a framework to send and receive messages using basic messageQueue and queueBroker on a multithreaded system.
+A MessageQueue is a communication class use to send messages.
 Full-duplex, each end point can be used to read or write message (CF message section).
-A connected MessageQueue is FIFO and lossless, see Section "Closing"
-for details about disconnection.
+A connected MessageQueue is FIFO and lossless, see Section "Closing" for details about disconnection.
 
 The typical use of messageQueues is by two tasks to establish a full-duplex communication. However, there is no ownership between messageQueue and tasks, any task may read or write in any messageQueue it has the reference to. The following rules apply:
 
@@ -31,7 +30,7 @@ This process guarantees protection from famine.
 
 ## Sending
 
-Signature: send(byte[] bytes, int offset, int length);
+Signature: **`send(byte[] bytes, int offset, int length)`**
 
 When sending, the given byte array contains the bytes of a message send in the channel.
 
