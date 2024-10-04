@@ -22,10 +22,10 @@ public class MessageQueue implements IMessageQueue {
 		try {
 			// send the length of the message
 			byte[] lengthBytes = new byte[4];
-			lengthBytes[0] = (byte) (length >> 24);
-			lengthBytes[1] = (byte) (length >> 16);
-			lengthBytes[2] = (byte) (length >> 8);
-			lengthBytes[3] = (byte) length;
+			for (int i = 0; i < 4; i++) {
+				lengthBytes[i] = (byte) (length >> (i * 8));
+			}
+			
 			int byteWrite = 0;
 			while (byteWrite < 4) {
 				byteWrite += channel.write(lengthBytes, byteWrite, 4 - byteWrite);
@@ -53,8 +53,11 @@ public class MessageQueue implements IMessageQueue {
 			while (byteRead < 4) {
 				byteRead += channel.read(lengthBytes, byteRead, 4 - byteRead);
 			}
-			int length = (lengthBytes[0] << 24) | (lengthBytes[1] << 16) | (lengthBytes[2] << 8) | lengthBytes[3];
-
+			int length = 0;
+			for (int i = 0; i < 4; i++) {
+                length += (lengthBytes[i] & 0xFF) << (i * 8);
+             }
+			
 			// read the message
 			byte[] bytes = new byte[length];
 			byteRead = 0;

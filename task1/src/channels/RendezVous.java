@@ -1,7 +1,5 @@
 package channels;
 
-import java.util.concurrent.Semaphore;
-
 import ichannels.IChannel;
 
 

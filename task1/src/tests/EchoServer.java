@@ -12,7 +12,7 @@ import messages.QueueBroker;
 public class EchoServer {
     public static void main(String[] args) {
 		//testChannel();
-		testMessage(64);
+		testMessage(5000);
     }
     
 	private static void testChannel() {
@@ -113,8 +113,9 @@ public class EchoServer {
         byte[] buffer = new byte[256];
         int bytesRead = 0;
         int byteWrite = 0;
-        try {
-            while ((bytesRead = channel.read(buffer, 0, buffer.length)) != -1) {
+        try {	
+            while (true) {
+            	bytesRead = channel.read(buffer, 0, buffer.length);
 				while (byteWrite < bytesRead) {
 					byteWrite += channel.write(buffer, byteWrite, bytesRead - byteWrite);
 				}
@@ -142,12 +143,21 @@ public class EchoServer {
         
         try {
         	int byteWrite = 0;
+        	
+        	byte[] receiveData = new byte[255];
+            int bytesRead = 0;
+            
         	while (byteWrite < sendData.length) {
          		byteWrite += channel.write(sendData, byteWrite, sendData.length - byteWrite);
+         		
+         		// clean the receive buffer
+				bytesRead += channel.read(receiveData, bytesRead, receiveData.length - bytesRead);
         	}
         	
-            byte[] receiveData = new byte[255];
-            int bytesRead = channel.read(receiveData, 0, receiveData.length);
+            // Check if the data is received correctly
+			while ((bytesRead < receiveData.length)) {
+				bytesRead += channel.read(receiveData, bytesRead, receiveData.length - bytesRead);
+			}
             
             for (int i = 0; i < bytesRead; i++) {
                 if (sendData[i] != receiveData[i]) {

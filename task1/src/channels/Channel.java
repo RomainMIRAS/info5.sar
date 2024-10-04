@@ -12,7 +12,7 @@ public class Channel implements IChannel {
 	private boolean dangling;
 	
 	public Channel() {
-		inputBuffer = new CircularBuffer(256);
+		inputBuffer = new CircularBuffer(64);
 	}
 
 	@Override
@@ -26,7 +26,7 @@ public class Channel implements IChannel {
 				if (inputBuffer.empty()) {
 					synchronized (inputBuffer) {
 						while (inputBuffer.empty()) {
-							if (dangling || disconnected)
+							if (disconnected)
 								throw new DisconnectedException("Channel is remotely disconnected");
 							try {
 								inputBuffer.wait();
@@ -63,7 +63,7 @@ public class Channel implements IChannel {
 	}
 
 	@Override
-	public int write(byte[] bytes, int offset, int length) throws DisconnectedException {
+	public int write(byte[] bytes, int offset, int length) throws DisconnectedException {	
 		if (disconnected) {
 			throw new DisconnectedException("Channel is locally disconnected");
 		}
@@ -73,11 +73,7 @@ public class Channel implements IChannel {
 			if (outputBuffer.full()) {
 				synchronized (outputBuffer) {
 					while (outputBuffer.full()) {
-						if (disconnected)
-							throw new DisconnectedException("Channel is remotely disconnected");
-						if (dangling) {
-							return length;
-						}
+						if (disconnected || dangling) throw new DisconnectedException("Channel is remotely disconnected");
 						try {
 							outputBuffer.wait();
 						} catch (InterruptedException e) {
