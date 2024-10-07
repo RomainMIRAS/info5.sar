@@ -1,4 +1,4 @@
-# Overview: QueueBroker / MessageQueue Event System
+# Overview: QueueBroker / MessageQueue based on Mixing Event/Thread
 The QueueBroker / MessageQueue system is a framework to send and receive messages on **event** system.
 A MessageQueue is a communication class use to send messages.
 Full-duplex, each end point can be used to read or write message (CF message section).
@@ -13,6 +13,11 @@ A messageQueue is either open or closed. It is created open and it becomes close
 
 Due to the utilization of a event system instead of thread base system, **each of the method use can't block** and will be responding at some point by an event. 
 Both of the class have public method have to set listener that will trigger the method at some point. Each listener are linked to the class.
+
+## TaskEvent
+
+New task will be used to represent a set of action to do that will be execute at some point.
+This task post a Runnable that may be executed. Those task can be kill to avoid them to be executing latter.
 
 # Connecting / Accepting
 

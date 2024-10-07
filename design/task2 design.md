@@ -1,4 +1,4 @@
-# Design Template for Message Layer
+# Design Template for Message Layer based on Thread
 
 ## Task Updated
 
