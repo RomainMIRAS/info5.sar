@@ -5,6 +5,9 @@ import imessages.IQueueBroker;
 public class QueueBroker implements IQueueBroker {
 	
 	// List de AcceptTask
+	public QueueBroker(String name) {
+		// TODO Auto-generated constructor stub
+	}
 
 	@Override
 	public String name() {
