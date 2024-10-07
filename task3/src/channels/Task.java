@@ -1,10 +1,8 @@
 package channels;
 
-import ichannels.IBroker;
 import imessages.IQueueBroker;
 
 public class Task extends Thread {
-	private IBroker broker;
 	private IQueueBroker queueBroker;
 	private Runnable runnable;
 
@@ -13,8 +11,7 @@ public class Task extends Thread {
 	 * @param b Broker
 	 * @param r Runnable
 	 */
-	public Task(IBroker b, Runnable r) {
-		this.broker = b;
+	public Task(Runnable r) {
 		this.runnable = r;
 		this.start(); // Changed from this.run() to this.start()
 	}
@@ -34,14 +31,6 @@ public class Task extends Thread {
 	@Override
 	public void run() {
 		this.runnable.run();
-	}
-
-	/**
-	 * Get the broker associated with this task
-	 * @return IBroker
-	 */
-	public IBroker getBroker() {
-		return this.broker;
 	}
 	
 	/**
