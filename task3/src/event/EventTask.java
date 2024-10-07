@@ -4,7 +4,7 @@ public class EventTask {
 	
 	private boolean alive;
 		
-	private Runnable myRunnable;
+	protected Runnable myRunnable;
 	private EventPump pump;
 
 	public EventTask() {

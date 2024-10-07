@@ -27,4 +27,11 @@ public class Message {
         this.offset = offset;
         this.length = length;
     }
+	
+	/**
+	 * Get the bytes of this messages
+	 */
+	public byte[] getBytes() {
+		return bytes;
+	}
 }

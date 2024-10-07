@@ -54,11 +54,6 @@ public class EventPump extends Thread{
 	public EventTask getTask() {
 		return task;
 	}
-
-	@Override
-	public void start() {
-		this.start();
-	}
 	
 	@Override
 	public synchronized void run() {

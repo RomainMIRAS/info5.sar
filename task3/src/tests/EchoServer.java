@@ -1,6 +1,7 @@
 package tests;
 
 import channels.Task;
+import event.EventPump;
 import imessages.IMessageQueue;
 import imessages.IQueueBroker;
 import imessages.Message;
@@ -11,6 +12,8 @@ public class EchoServer {
 	public final static int messageSize = 5000;
 	
     public static void main(String[] args) {
+    	
+		EventPump.getInstance().start();
     	    	
 		QueueBroker serverQueueBroker = new QueueBroker("server");	
         new Task(serverQueueBroker, () -> runServerMessage(messageSize));

@@ -127,7 +127,7 @@ public class Channel implements IChannel {
 		notifyAll(); // Wake up any blocked read/write operations
 	}
 
-	public void connect(Channel connectChannel, String name) {
+	public void connect(Channel connectChannel) {
 		this.remoteChannel = connectChannel;
 		connectChannel.remoteChannel = this;
 		this.outputBuffer = connectChannel.inputBuffer;
