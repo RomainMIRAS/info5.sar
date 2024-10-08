@@ -1,14 +1,16 @@
 package messages;
 
+import event.CloseEventTask;
+import event.SendEventTask;
 import ichannels.IChannel;
 import imessages.IMessageQueue;
 import imessages.Message;
 
 public class MessageQueue implements IMessageQueue {
 	
-	IChannel channel;
-	
-	Listener listener;
+	private IChannel channel;
+	private Listener listener;
+	private MessageQueue remoteQueue;
 	
 	public MessageQueue(IChannel channel) {
 		this.channel = channel;
@@ -21,24 +23,40 @@ public class MessageQueue implements IMessageQueue {
 	}
 
 	@Override
-	public boolean send(Message message) {
+	public synchronized boolean send(Message message) {
 		if (this.listener == null) {
 			return false;
+		} else if (channel.disconnected()) {
+			return false;
 		}
-	
+				
+		SendEventTask sendEvent = new SendEventTask(listener, channel, message, remoteQueue);
+		sendEvent.postTask();
+			
 		return true;
+	}
+	
+	public Listener getListener() {
+		return listener;
+	}
+	
+	public IChannel getChannel() {
+		return channel;
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
-
+		CloseEventTask closeEvent = new CloseEventTask(channel);
+		closeEvent.postTask();
 	}
 
 	@Override
 	public boolean closed() {
-		// TODO Auto-generated method stub
-		return false;
+		return channel.disconnected();
+	}
+	
+	public void setRemoteQueue(MessageQueue remoteQueue) {
+	    this.remoteQueue = remoteQueue;
 	}
 
 }

@@ -9,7 +9,7 @@ import messages.QueueBroker;
 
 public class EchoServer {
 	
-	public final static int messageSize = 5000;
+	public final static int messageSize = 255;
 	
     public static void main(String[] args) {
     	
@@ -65,7 +65,10 @@ class MyEchoServerListener implements IMessageQueue.Listener {
 	public void received(byte[] bytes) {
 		System.out.println("Server received message");
         try {
-            queue.send(new Message(bytes));
+            boolean sent = queue.send(new Message(bytes));
+			if (!sent) {
+				System.out.println("Server failed to send response");
+			}
         } catch (Exception e) {
         	System.out.println("Server failed to send message: " + e.getMessage());
         }
@@ -79,7 +82,6 @@ class MyEchoServerListener implements IMessageQueue.Listener {
 	@Override
 	public void sent(Message message) {
 		System.out.println("Server sent response");
-		queue.close();
 	}
 }
 
@@ -109,6 +111,8 @@ class MyEchoClientListener implements IMessageQueue.Listener {
 			}
 		}
 		
+		queue.close();
+		
 		System.out.println("Test passed");
 	}
 
@@ -120,7 +124,6 @@ class MyEchoClientListener implements IMessageQueue.Listener {
 	@Override
 	public void sent(Message message) {
 		System.out.println("Client sent message");
-		queue.close();
 	}
 	
 }	
@@ -151,7 +154,10 @@ class MyConnectListener implements IQueueBroker.ConnectListener {
 		queue.setListener(listener);
 
 		Message message = new Message(messageContent, 0, messageSize);
-		queue.send(message);
+		boolean sent = queue.send(message);
+		if (!sent) {
+			System.out.println("Client failed to send message");
+		}		
 	}
 
 	@Override

@@ -34,4 +34,26 @@ public class Message {
 	public byte[] getBytes() {
 		return bytes;
 	}
+	
+	/**
+	 * Get the offset of this message
+	 */
+	public int getOffset() {
+		return offset;
+	}
+	
+	/**
+	 * Get the length of this message
+	 */
+	public int getLength() {
+		return length;
+	}
+	
+	public boolean messageFullySent() {
+		return length == offset;
+	}
+	
+	public void updateSendinfo(int offset) {
+		this.offset += offset;
+	}
 }

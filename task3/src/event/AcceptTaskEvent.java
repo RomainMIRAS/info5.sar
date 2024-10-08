@@ -18,12 +18,16 @@ public class AcceptTaskEvent extends EventTask {
 		
 		connectionAlreadyAccepted = false;
 		Channel connectChannel = new Channel();
-		connectChannel.connect(connectChannel);
 		Channel acceptChannel = new Channel();
-		acceptChannel.connect(acceptChannel);
+		acceptChannel.connect(connectChannel);
+		connectChannel.connect(acceptChannel);
+		
 		
 		acceptQueue = new MessageQueue(acceptChannel);
 		connectQueue = new MessageQueue(connectChannel);
+		
+		acceptQueue.setRemoteQueue(connectQueue);
+		connectQueue.setRemoteQueue(acceptQueue);
 		
 		this.myRunnable = new Runnable() {
 			@Override

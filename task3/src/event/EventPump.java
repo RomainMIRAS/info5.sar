@@ -31,7 +31,7 @@ public class EventPump extends Thread{
 		instance = new EventPump();
 	}
 	
-	public static synchronized EventPump getInstance() {
+	public static EventPump getInstance() {
         if (instance == null) {
             instance = new EventPump();
         }
