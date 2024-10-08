@@ -29,7 +29,7 @@ public class AcceptTaskEvent extends EventTask {
 			@Override
 			public void run() {
 				// if connection is already accepted, repost the task
-				if (connectionAlreadyAccepted) {
+				if (!connectionAlreadyAccepted) {
 					EventPump.getInstance().post(EventTask.task());
 				} else {
 					listener.accepted(acceptQueue);
@@ -53,5 +53,19 @@ public class AcceptTaskEvent extends EventTask {
 	
 	public IMessageQueue getConnectQueue() {
 		return connectQueue;
+	}
+
+	/**
+	 * This method is used to set the connection as accepted
+	 * @return true if the connection has been accepted, false otherwise
+	 */
+	public boolean getConnection() {
+		synchronized (this) {
+			if (connectionAlreadyAccepted) {
+				return false;
+			}
+			this.connectionAlreadyAccepted = true;
+			return true;
+		}
 	}
 }

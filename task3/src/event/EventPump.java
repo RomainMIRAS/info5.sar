@@ -56,7 +56,7 @@ public class EventPump extends Thread{
 	}
 	
 	@Override
-	public synchronized void run() {
+	public void run() {
 		this.running = true;
 		while (this.running) {
 			if (this.tasks.isEmpty()) {
@@ -73,9 +73,9 @@ public class EventPump extends Thread{
 	
 	public synchronized boolean remove(EventTask event) {
         return this.tasks.remove(event);
-        }
+    }
 	
-	private void sleep() {
+	private synchronized void sleep() {
 		try {
 		wait();
 		} catch (InterruptedException ex){

@@ -64,6 +64,10 @@ public class QueueBroker implements IQueueBroker {
         if (a == null || a.isConnectionAlreadyAccepted()) {
             listener.refused();
         }
+        boolean connectionAlreadAccepted = a.getConnection();
+		if (!connectionAlreadAccepted) {
+			listener.refused();
+		}
         listener.connected(a.getConnectQueue());
 	}
 

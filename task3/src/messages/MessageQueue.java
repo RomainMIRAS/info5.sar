@@ -12,6 +12,7 @@ public class MessageQueue implements IMessageQueue {
 	
 	public MessageQueue(IChannel channel) {
 		this.channel = channel;
+		this.listener = null;
 	}
 
 	@Override
@@ -20,8 +21,12 @@ public class MessageQueue implements IMessageQueue {
 	}
 
 	@Override
-	public void send(Message message) {
-	    // TODO Auto-generated method stub
+	public boolean send(Message message) {
+		if (this.listener == null) {
+			return false;
+		}
+	
+		return true;
 	}
 
 	@Override

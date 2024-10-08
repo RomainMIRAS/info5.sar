@@ -12,7 +12,7 @@ public interface IMessageQueue {
 	}
 	
 	void setListener(Listener listener);
-	void send(Message message);
+	boolean send(Message message);
 	void close();
 	boolean closed();
 }
