@@ -2,21 +2,24 @@ package messages;
 
 import java.util.HashMap;
 
-import event.AcceptTaskEvent;
-import event.ConnectTaskEvent;
+import channels.Broker;
+import channels.BrokerManager;
+import event.Task;
+import ichannels.IChannel;
 import imessages.IQueueBroker;
 
 public class QueueBroker implements IQueueBroker {
 	
+	private HashMap<Integer, Thread> acceptThreads;
+	private Broker broker;
 	private String name;
-	private HashMap<Integer, AcceptTaskEvent> acceptTask;
 	
 	
 	// List de AcceptTask
 	public QueueBroker(String name) {
+		this.broker = new Broker(name);
 		this.name = name;
-		this.acceptTask = new HashMap<>();
-		QueueBrokerManager.getInstance().registerBroker(this);
+		this.acceptThreads = new HashMap<>();
 	}
 
 	@Override
@@ -25,50 +28,58 @@ public class QueueBroker implements IQueueBroker {
 	}
 
 	@Override
-	public boolean unbind(int port) {
-		AcceptTaskEvent a = acceptTask.get(port);
-		a.kill();
-		if (a.killed()) {
-			acceptTask.remove(port);
-			return true;
-		}
-		return a.killed();
+	public boolean bind(int port, AcceptListener listener) {
+		
+		if (acceptThreads.containsKey(port)) {
+            return false;
+        }
+
+        Thread acceptThread = new Thread(() -> {
+            while (true) {
+                try {
+                    IChannel channel = broker.accept(port);
+                    MessageQueue queue = new MessageQueue(channel);
+                    Task task = new Task();
+                    task.post(() -> listener.accepted(queue));
+                } catch (Exception e) {
+                    break;
+                }
+            }
+        });
+        acceptThreads.put(port, acceptThread);
+        acceptThread.start();
+        return true;
 	}
 
 	@Override
-	public boolean bind(int port, AcceptListener listener) {
-		AcceptTaskEvent a = acceptTask.get(port);
-		if (a != null) {
+	public boolean unbind(int port) {
+		if (!acceptThreads.containsKey(port)) {
 			return false;
 		}
-		a = new AcceptTaskEvent(port,listener);
-		acceptTask.put(port, a);
-		a.postTask();
+		Thread acceptThread = acceptThreads.get(port);
+		acceptThread.interrupt();
+		acceptThreads.remove(port);
 		return true;
 	}
 
 	@Override
 	public boolean connect(String name, int port, ConnectListener listener) {
-		QueueBroker broker = (QueueBroker) QueueBrokerManager.getInstance().getBroker(name);
-        if (broker == null) {
-            return false;
-        }
-        
-        ConnectTaskEvent c = new ConnectTaskEvent(broker, port, listener);
-        c.postTask();
-        return true;
-	}
-
-	public void _connect(int port, ConnectListener listener) {
-        AcceptTaskEvent a = acceptTask.get(port);
-        if (a == null || a.isConnectionAlreadyAccepted()) {
-            listener.refused();
-        }
-        boolean connectionAlreadAccepted = a.getConnection();
-		if (!connectionAlreadAccepted) {
-			listener.refused();
+		BrokerManager manager = BrokerManager.getInstance();
+		Broker broker = manager.getBroker(name);
+		if (broker == null) {
+			return false;
 		}
-        listener.connected(a.getConnectQueue());
+		new Thread(() -> {
+			try {
+				IChannel channel = broker.connect(name, port);
+				MessageQueue queue = new MessageQueue(channel);
+				Task task = new Task();
+				task.post(() -> listener.connected(queue));
+			} catch (Exception e) {
+				listener.refused();
+			}
+		}).start();
+		return true;
 	}
 
 }

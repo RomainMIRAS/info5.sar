@@ -1,7 +1,7 @@
 package tests;
 
-import channels.Task;
 import event.EventPump;
+import event.Task;
 import imessages.IMessageQueue;
 import imessages.IQueueBroker;
 import imessages.Message;
@@ -13,51 +13,44 @@ public class EchoServer {
 	
     public static void main(String[] args) {
     	
-		EventPump.getInstance().start();
-    	    	
-		QueueBroker serverQueueBroker = new QueueBroker("server");	
-        new Task(serverQueueBroker, () -> runServerMessage(messageSize));
+    	Runnable serverRunnable = new Runnable() {
+ 		   public void run() {
+ 			   IQueueBroker queueBroker = new QueueBroker("server");
+ 			   MyQueueAcceptListener listener = new MyQueueAcceptListener();
+ 				boolean bound = queueBroker.bind(8080, listener);
+ 				
+ 				if (!bound) {
+ 					System.out.println("Server failed to bind");
+ 					return;
+ 				}
+            }
+        };
         
-        try {
-            Thread.sleep(1000); // Wait for the server to starts
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        QueueBroker clientQueueBroker = new QueueBroker("client");
-        new Task(clientQueueBroker, () -> runClientMessage(messageSize));
+ 		Runnable clientRunnable = new Runnable() {
+ 			public void run() {
+ 				IQueueBroker queueBroker = new QueueBroker("client");
+ 				MyQueueConnectListener listener = new MyQueueConnectListener();
+ 				boolean connected = queueBroker.connect("server", 8080, listener);
+ 				if (!connected) {
+ 					System.out.println("Client failed to connect");
+ 					return;
+ 				}
+ 			}
+ 		};
+ 		
+ 		new Task().post(serverRunnable);
+ 		new Task().post(clientRunnable);
+ 		EventPump.getInstance().start();
     }
-    
-    private static void runServerMessage(int messageSize) {
-		IQueueBroker queueBroker = Task.getTask().getQueueBroker();
-		MyAcceptListener listener = new MyAcceptListener();
-		boolean bound = queueBroker.bind(8080, listener);
-		
-		if (!bound) {
-			System.out.println("Server failed to bind");
-			return;
-		}
-	}
-	
-	private static void runClientMessage(int messageSize) {
-		IQueueBroker queueBroker = Task.getTask().getQueueBroker();
-		MyConnectListener listener = new MyConnectListener();
-		boolean connected = queueBroker.connect("server", 8080, listener);
-		if (!connected) {
-			System.out.println("Client failed to connect");
-			return;
-		}
-	}
-
 }
 
 
 
-class MyEchoServerListener implements IMessageQueue.Listener {
+class MyEchoServerQueueListener implements IMessageQueue.Listener {
 	
 	private IMessageQueue queue;
 	
-	public MyEchoServerListener(IMessageQueue queue) {
+	public MyEchoServerQueueListener(IMessageQueue queue) {
 		this.queue = queue;
 	}
 
@@ -85,11 +78,11 @@ class MyEchoServerListener implements IMessageQueue.Listener {
 	}
 }
 
-class MyEchoClientListener implements IMessageQueue.Listener {
+class MyEchoClientQueueListener implements IMessageQueue.Listener {
 	
 	private IMessageQueue queue;
 	
-	public MyEchoClientListener(IMessageQueue queue) {
+	public MyEchoClientQueueListener(IMessageQueue queue) {
 		this.queue = queue;
 	}
 
@@ -128,18 +121,18 @@ class MyEchoClientListener implements IMessageQueue.Listener {
 	
 }	
 
-class MyAcceptListener implements IQueueBroker.AcceptListener {
+class MyQueueAcceptListener implements IQueueBroker.AcceptListener {
 	
 	@Override
 	public void accepted(IMessageQueue queue) {
 		System.out.println("Server accepted connection");
-		MyEchoServerListener listener = new MyEchoServerListener(queue);
+		MyEchoServerQueueListener listener = new MyEchoServerQueueListener(queue);
 		queue.setListener(listener);
 	}
 	
 }
 
-class MyConnectListener implements IQueueBroker.ConnectListener {
+class MyQueueConnectListener implements IQueueBroker.ConnectListener {
 
 	@Override
 	public void connected(IMessageQueue queue) {
@@ -150,7 +143,7 @@ class MyConnectListener implements IQueueBroker.ConnectListener {
 			messageContent[i] = (byte) (i + 1);
 		}
 		
-		MyEchoClientListener listener = new MyEchoClientListener(queue);
+		MyEchoClientQueueListener listener = new MyEchoClientQueueListener(queue);
 		queue.setListener(listener);
 
 		Message message = new Message(messageContent, 0, messageSize);

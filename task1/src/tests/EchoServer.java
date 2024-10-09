@@ -103,6 +103,7 @@ public class EchoServer {
 
 		messageQueue.closed();
 
+		System.out.println("Client received correct response");
 		System.out.println("Client finished");
 	}
 

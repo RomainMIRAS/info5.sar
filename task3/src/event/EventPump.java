@@ -5,17 +5,16 @@ import java.util.List;
 
 public class EventPump extends Thread{
 	
-	private Runnable currentRunnable;
-	private EventTask task;
+	private Event currentRunnable;
 	private boolean running;
-	private List<EventTask> tasks;
+	private List<Event> runnables;
     private static EventPump instance;
 
 	private EventPump() {
 		super();
 		this.currentRunnable = null;
 		this.running = false;
-		this.tasks = new LinkedList<>();
+		this.runnables = new LinkedList<>();
 	}
 	
 	public static EventPump getEventPump() {
@@ -38,8 +37,8 @@ public class EventPump extends Thread{
         return instance;
     }
 
-	public synchronized void post(EventTask event) {
-		this.tasks.add(event);
+	public synchronized void post(Event event) {
+		this.runnables.add(event);
 		notify();
 	}
 
@@ -51,28 +50,23 @@ public class EventPump extends Thread{
 		return !this.running;
 	}
 	
-	public EventTask getTask() {
-		return task;
-	}
-	
 	@Override
 	public void run() {
 		this.running = true;
 		while (this.running) {
-			if (this.tasks.isEmpty()) {
+			if (this.runnables.isEmpty()) {
 				sleep();
 			} else {
-				this.task = this.tasks.remove(0);
-				this.currentRunnable = this.task.getMyRunnable();
+				this.currentRunnable = this.runnables.remove(0);
+				Task.current = currentRunnable.myTask;
 				this.currentRunnable.run();
 				this.currentRunnable = null;
-				this.task = null;
 			}
 		}
 	}
 	
-	public synchronized boolean remove(EventTask event) {
-        return this.tasks.remove(event);
+	public synchronized boolean remove(Event event) {
+        return this.runnables.remove(event);
     }
 	
 	private synchronized void sleep() {
