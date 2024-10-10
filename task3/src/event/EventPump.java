@@ -11,7 +11,7 @@ public class EventPump extends Thread{
     private static EventPump instance;
 
 	private EventPump() {
-		super();
+		super("EventPump");
 		this.currentRunnable = null;
 		this.running = false;
 		this.runnables = new LinkedList<>();

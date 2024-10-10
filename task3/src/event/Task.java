@@ -1,18 +1,30 @@
 package event;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Task {
 	
 	boolean alive;
 	static Task current = null;
+	Set<Event> events;
+	EventPump eventPump;
+	Task myCreator;
 	
 	public Task() {
+		this.events = new HashSet<>();
 		alive = true;
+		eventPump = EventPump.getInstance();
+		myCreator = current;
 	}
 	
 	public void post(Runnable r) {
-		Task t = task();
-		Event e = new Event(this, t, r);
-		EventPump.getInstance().post(e);
+		if (!alive) {
+			return;
+		}
+		Event e = new Event(this, current, r);
+		events.add(e);
+		eventPump.post(e);
 	}
 	
 	public static Task task() {
@@ -20,7 +32,10 @@ public class Task {
 	}
 	
 	public void kill() {
-		alive = false;
+		this.alive = false;
+		for (Event e : events) {
+			eventPump.remove(e);
+		}
 	}
 	
 	public boolean killed() {
