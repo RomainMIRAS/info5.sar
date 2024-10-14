@@ -10,41 +10,58 @@ public class Broker implements IBroker {
 
 	private String name;
 	private BrokerManager manager;
-	private Map<Integer, Task> acceptTasks;
+	private Map<Integer, Binder> binders;
 	
 	public Broker(String string) {
 		this.name = string;
 		this.manager = BrokerManager.getInstance();
-		this.acceptTasks = new HashMap<Integer, Task>();
+		this.binders = new HashMap<Integer, Binder>();
 		manager.registerBroker(this);
 	}
 
 	@Override
 	public boolean unbind(int port) {
-		Task task = acceptTasks.get(port);
-		if (task == null) {
+		Binder binder = binders.get(port);
+		if (binders == null) {
 			return false;
 		}
-		task.kill();
-		acceptTasks.remove(port);
+		binder.kill();
+		binders.remove(port);
 		return true;
 	}
 
 	@Override
 	public boolean bind(int port, AcceptListener listener) {
-//		Task task = new Task();
-//		acceptTasks.put(port, task);
-//		task.post(new AcceptRunnable(port, listener, this));
-//		return true;
-		return false;
+		Binder binder = binders.get(port);
+		if (binder != null) {
+            return false;
+		}
+		
+		binder = new Binder(port, listener);
+		binders.put(port, binder);
+		binder.bind();
+		return true;
 	}
 
 	@Override
 	public boolean connect(String name, int port, ConnectListener listener) {
-//		Task task = new Task();
-//		task.post(new ConnectRunnable(name, port, listener, this));
-//		return true;
-		return false;
+		Broker remoteBroker = manager.getBroker(name);
+		if (remoteBroker == null) {
+			return false;
+		}
+		
+		Task task = new Task("Connect Task " + this.name + " " + name + " " + port);
+		task.post(new ConnectRunnable(port,listener,remoteBroker));
+		return true;
+	}
+	
+	void _connect(int port, ConnectListener listener) {
+		Binder binder = binders.get(port);
+		if (binder == null) {
+			listener.refused();
+			return;
+		}
+		binder._acceptConnection(listener);
 	}
 
 	@Override
