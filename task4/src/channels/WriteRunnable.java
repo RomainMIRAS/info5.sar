@@ -1,6 +1,7 @@
 package channels;
 
 import event.Task;
+import ichannels.IChannel.WriteListener;
 
 public class WriteRunnable implements Runnable {
 	
@@ -9,23 +10,20 @@ public class WriteRunnable implements Runnable {
 	private int length;
 	private CircularBuffer outputBuffer;
 	private Channel channel;
+	private WriteListener listener;
 
-	public WriteRunnable(byte[] bytes, int offset, int length, CircularBuffer outputBuffer, Channel channel) {
+	public WriteRunnable(byte[] bytes, int offset, int length, CircularBuffer outputBuffer, Channel channel, WriteListener listener) {
 		this.bytes = bytes;
         this.offset = offset;
         this.length = length;
         this.outputBuffer = outputBuffer;
         this.channel = channel;
+        this.listener = listener;
 	}
 
 	@Override
 	public void run() {
 		if (channel.disconnected()) return;
-		
-		if (outputBuffer.full()) {
-			Task.task().post(this);
-			return;
-		}
 		
 		int bytesWritten = 0;
 		while (bytesWritten < length && !outputBuffer.full()) {
@@ -34,8 +32,10 @@ public class WriteRunnable implements Runnable {
 			bytesWritten++;
 		}
 		
-		channel.getListener().wrote(bytesWritten);
-		channel.remoteChannel._read(bytesWritten);
+		listener.written(bytesWritten);
+		if (channel.remoteChannel.listener != null && bytesWritten > 0) {
+			channel.remoteChannel.listener.available();
+		}
 	}
 
 }

@@ -8,60 +8,47 @@ public class Channel implements IChannel {
 	private CircularBuffer inputBuffer;
 	private CircularBuffer outputBuffer;
 	Channel remoteChannel;
-	private Listener listener;
+	ReadListener listener;
 	private boolean disconnected;
 	
 	private Task writeTask;
-	private Task readTask;
+	private boolean dangling;
 	
 	public Channel() {
 		inputBuffer = new CircularBuffer(64);
 		writeTask = new Task("Write Task");
-		readTask = new Task("Read Task");
+		disconnected = false;
+		dangling = false;
 	}
 
 	@Override
-	public boolean write(byte[] bytes, int offset, int length) {
+	public boolean write(byte[] bytes, int offset, int length, WriteListener listener) {
 		// Event base
-		if (outputBuffer == null) {
+		if (outputBuffer == null || disconnected || listener == null || dangling) {
 			return false;
 		}
-		writeTask.post(new WriteRunnable(bytes, offset, length, outputBuffer, this));
+		writeTask.post(new WriteRunnable(bytes, offset, length, outputBuffer, this, listener));
 		return true;
 	}
 
 	@Override
-	public void disconnect() {
+	public void disconnect(DisconnectListener listener) {
 		new Task("Disconnect Task").post(new Runnable() {
 			@Override
 			public void run() {
 				disconnected = true;
-				if (remoteChannel != null && !remoteChannel.disconnected()) {
-					remoteChannel.disconnect();
-				}
+				remoteChannel.dangling = true;
+				
 				if (listener != null) {
 					listener.disconnected();
 				}
 			}
 		});
 	}
-	
-	void _read(int availableBytes) {
-		readTask.post(new ReadRunnable(inputBuffer, this, availableBytes));
-	}
 
 	@Override
 	public boolean disconnected() {
 		return disconnected;
-	}
-
-	@Override
-	public void setListener(Listener listener) {
-		this.listener = listener;
-	}
-	
-	Listener getListener() {
-		return listener;
 	}
 	
 	void connect(Channel connectChannel) {
@@ -69,6 +56,22 @@ public class Channel implements IChannel {
 		connectChannel.remoteChannel = this;
 		this.outputBuffer = connectChannel.inputBuffer;
 		connectChannel.outputBuffer = this.inputBuffer;
+	}
+
+	@Override
+	public int read(byte[] bytes, int offset, int length) {
+	    int bytesRead = 0;
+	    while (bytesRead < length && !inputBuffer.empty()) {
+	        byte value = inputBuffer.pull();
+	        bytes[offset + bytesRead] = value;
+	        bytesRead++;
+	    }
+	    return bytesRead;
+	}
+
+	@Override
+	public void setReadListener(ReadListener listener) {
+		this.listener = listener;
 	}
 	
 }
