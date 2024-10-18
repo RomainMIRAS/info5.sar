@@ -3,6 +3,7 @@ package channels;
 import event.Task;
 import ichannels.IBroker.AcceptListener;
 import ichannels.IBroker.ConnectListener;
+import ichannels.IChannel;
 
 public class Binder {
 	private Task task;
@@ -25,8 +26,15 @@ public class Binder {
 	}
 	
 	public void kill() {
-		acceptChannel.disconnect();
-		connectChannel.disconnect();
+		IChannel.DisconnectListener disconnectListener = new IChannel.DisconnectListener() {
+			@Override
+			public void disconnected() {
+				// Do nothing
+			}
+		};
+		
+		acceptChannel.disconnect( disconnectListener);
+		connectChannel.disconnect( disconnectListener);
 		task.kill();
 	}
 	
