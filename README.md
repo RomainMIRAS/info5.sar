@@ -5,6 +5,7 @@ This repository contains resources and source code for the **info5.sar** project
 ## Repository Structure
 - **/task1**: Eclipse project containing Threaded Channel/Broker + Threaded Message Overlay
 - **/task3**: Eclipse project containing Threaded Channel + Mixed Thread/Event Message Overlay
+- **/task4**: Eclipse project containing Full Event Message Layer
 - **/design**: Folder containing designs for each task.
 - **/specification**: Folder containing specifications for each task.
 
