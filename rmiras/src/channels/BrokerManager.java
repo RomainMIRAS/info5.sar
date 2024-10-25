@@ -21,7 +21,6 @@ public class BrokerManager {
 	 * Variant without lazy initialization Block is call at the beginning of the
 	 * class definition by the VM static { instance = new BrokerManager(); }
 	 */
-
 	public synchronized void registerBroker(Broker broker) {
 		String name = broker.name();
 		if (brokers.containsKey(name)) {

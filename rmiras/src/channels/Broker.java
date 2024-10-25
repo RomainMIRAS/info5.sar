@@ -1,10 +1,9 @@
 package channels;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import event.Task;
 import ichannels.IBroker;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Broker implements IBroker {
 
@@ -15,7 +14,12 @@ public class Broker implements IBroker {
 	public Broker(String string) {
 		this.name = string;
 		this.manager = BrokerManager.getInstance();
-		this.binders = new HashMap<Integer, Binder>();
+		this.binders = new HashMap<>();
+		initialize();
+		
+	}
+
+	public void initialize() {
 		manager.registerBroker(this);
 	}
 
@@ -40,6 +44,7 @@ public class Broker implements IBroker {
 		binder = new Binder(port, listener);
 		binders.put(port, binder);
 		binder.bind();
+
 		return true;
 	}
 
@@ -52,6 +57,7 @@ public class Broker implements IBroker {
 
 		Task task = new Task("Connect Task " + this.name + " " + name + " " + port);
 		task.post(new ConnectRunnable(port, listener, remoteBroker));
+
 		return true;
 	}
 
@@ -61,6 +67,7 @@ public class Broker implements IBroker {
 			listener.refused();
 			return;
 		}
+
 		binder._acceptConnection(listener);
 	}
 
@@ -68,5 +75,4 @@ public class Broker implements IBroker {
 	public String name() {
 		return name;
 	}
-
 }

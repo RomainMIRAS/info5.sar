@@ -3,8 +3,7 @@ package channels;
 import event.Task;
 
 public class AcceptRunnable implements Runnable {
-
-	private Binder binder;
+	Binder binder;
 
 	public AcceptRunnable(Binder binder) {
 		this.binder = binder;

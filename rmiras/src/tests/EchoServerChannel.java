@@ -8,12 +8,12 @@ import ichannels.IChannel;
 
 public class EchoServerChannel {
 	
-	public final static int messageSize = 1000;
+	public final static int MESSAGE_SIZE = 1000;
 	
-	public final static byte[] messageContent = new byte[messageSize];
+	public final static byte[] messageContent = new byte[MESSAGE_SIZE];
 	
 	static {
-		for (int i = 0; i < messageSize; i++) {
+		for (int i = 0; i < MESSAGE_SIZE; i++) {
 			messageContent[i] = (byte) i;
 		}
 	}
@@ -21,29 +21,29 @@ public class EchoServerChannel {
    public static void main(String[] args) {
 	   
 	   Runnable serverRunnable = new Runnable() {
-		   public void run() {
+			@Override
+			public void run() {
 			   	Broker broker = new Broker("server");
 			   	MyAcceptListener listener = new MyAcceptListener();
 				boolean bound = broker.bind(8080, listener);
 				
-				if (!bound) {
+				if (!bound)
 					System.out.println("Server failed to bind");
-					return;
-				}
            }
        };
        
 		Runnable clientRunnable = new Runnable() {
+			@Override
 			public void run() {
 				Broker broker = new Broker("client");
 				MyConnectListener listener = new MyConnectListener();
 				boolean connected = broker.connect("server", 8080, listener);
-				if (!connected) {
+
+				if (!connected)
 					System.out.println("Client failed to connect");
-					return;
-				}
 			}
 		};
+
 		Task mainTask = new Task("Main Test Channel");
 		mainTask.post(serverRunnable);
 		mainTask.post(clientRunnable);
@@ -52,12 +52,9 @@ public class EchoServerChannel {
    
 }
 
-
-
-
 class MyEchoServerListener implements IChannel.ReadListener {
 	
-	private IChannel channel;
+	private final IChannel channel;
 	
 	public MyEchoServerListener(IChannel channel) {
 		this.channel = channel;
@@ -66,14 +63,15 @@ class MyEchoServerListener implements IChannel.ReadListener {
 	@Override
 	public void available() {
 		System.out.println("Server has data available to read");
-		byte[] bytes = new byte[EchoServerChannel.messageSize];
-		int bytesRead = channel.read(bytes, 0, EchoServerChannel.messageSize);
+
+		byte[] bytes = new byte[EchoServerChannel.MESSAGE_SIZE];
+		int bytesRead = channel.read(bytes, 0, EchoServerChannel.MESSAGE_SIZE);
+
 		System.out.println("Server read " + bytesRead + " bytes");
 		
 		if (bytesRead == 0) return;
 		
 		IChannel.WriteListener listenerWrite = new IChannel.WriteListener() {
-			
 			@Override
 			public void written(int bytesWritten) {
 				System.out.println("Server wrote " + bytesWritten + " bytes");
@@ -93,41 +91,38 @@ class MyEchoServerListener implements IChannel.ReadListener {
 
 class MyEchoClientListener implements IChannel.ReadListener {
 	
-	private IChannel channel;
-	int bytesSent;
+	private final IChannel channel;
 	int bytesReceived;
-	byte[] messageReceived = new byte[EchoServerChannel.messageSize];
+	byte[] messageReceived = new byte[EchoServerChannel.MESSAGE_SIZE];
 	
 	public MyEchoClientListener(IChannel channel) {
 		this.channel = channel;
-		this.bytesSent = 0;
 		this.bytesReceived = 0;
 	}
 
 	@Override
 	public void available() {
 		System.out.println("Client has data available to read");
-		int bytedRead = channel.read(messageReceived, bytesReceived, EchoServerChannel.messageSize - bytesReceived);
+
+		int bytedRead = channel.read(messageReceived, bytesReceived, EchoServerChannel.MESSAGE_SIZE - bytesReceived);
+
 		System.out.println("Client read " + bytedRead + " bytes");
 		
-		
-		if (bytedRead + bytesReceived > EchoServerChannel.messageSize) {
+		if (bytedRead + bytesReceived > EchoServerChannel.MESSAGE_SIZE) {
 			System.out.println("Client received too many bytes");
 			return;
-		}
-		
-		if (bytedRead == 0) {
+		} else if (bytedRead == 0) {
 			System.out.println("Client received empty response");
 			return;
 		}
 		
 		bytesReceived += bytedRead;
 		
-		if (bytesReceived < EchoServerChannel.messageSize) {
+		if (bytesReceived < EchoServerChannel.MESSAGE_SIZE) {
 			return;
 		}
 		
-		for (int i = 0; i < EchoServerChannel.messageSize; i++) {
+		for (int i = 0; i < EchoServerChannel.MESSAGE_SIZE; i++) {
 			if (messageReceived[i] != EchoServerChannel.messageContent[i]) {
 				System.out.println("Client received incorrect response");
 				return;
@@ -135,7 +130,6 @@ class MyEchoClientListener implements IChannel.ReadListener {
 		}
 		
 		channel.disconnect(new IChannel.DisconnectListener() {
-
 			@Override
 			public void disconnected() {
 				System.out.println("Client disconnected");
@@ -151,6 +145,7 @@ class MyAcceptListener implements IBroker.AcceptListener {
 	@Override
 	public void accepted(IChannel channel) {
 		System.out.println("Server accepted connection");
+
 		MyEchoServerListener listener = new MyEchoServerListener(channel);
 		channel.setReadListener(listener);
 	}
@@ -158,7 +153,6 @@ class MyAcceptListener implements IBroker.AcceptListener {
 }
 
 class MyConnectListener implements IBroker.ConnectListener {
-
 	@Override
 	public void connected(IChannel channel) {
 		System.out.println("Connection established for client");
@@ -173,10 +167,10 @@ class MyConnectListener implements IBroker.ConnectListener {
 			@Override
 			public void written(int bytesSent) {
 				this.bytesSent += bytesSent;
-		        System.out.println("Client wrote " + bytesSent + " bytes");
-		        
-				if (this.bytesSent < EchoServerChannel.messageSize) {
-					boolean sent = channel.write(EchoServerChannel.messageContent, this.bytesSent, EchoServerChannel.messageSize - this.bytesSent, this);
+				System.out.println("Client wrote " + bytesSent + " bytes");
+				
+				if (this.bytesSent < EchoServerChannel.MESSAGE_SIZE) {
+					boolean sent = channel.write(EchoServerChannel.messageContent, this.bytesSent, EchoServerChannel.MESSAGE_SIZE - this.bytesSent, this);
 					if (!sent) {
 						System.out.println("Client failed to send message");
 					}
@@ -184,10 +178,9 @@ class MyConnectListener implements IBroker.ConnectListener {
 					System.out.println("Client finished sending message");
 				}
 			}
-        };
-            
-
-		boolean sent = channel.write(EchoServerChannel.messageContent, 0, EchoServerChannel.messageSize, listenerWrite);
+		};
+		
+		boolean sent = channel.write(EchoServerChannel.messageContent, 0, EchoServerChannel.MESSAGE_SIZE, listenerWrite);
 		if (!sent) {
 			System.out.println("Client failed to send message");
 		}		
@@ -197,5 +190,4 @@ class MyConnectListener implements IBroker.ConnectListener {
 	public void refused() {
 		System.out.println("Connection refused");
 	}
-	
 }

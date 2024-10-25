@@ -16,7 +16,6 @@ public class ConnectRunnable implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		remoteBroker._connect(port, listener);
 	}
 

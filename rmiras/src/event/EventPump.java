@@ -4,11 +4,10 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class EventPump extends Thread{
-	
-	private Event currentRunnable;
-	private boolean running;
-	private Queue<Event> runnables;
-    private static EventPump instance;
+	Event currentRunnable;
+	boolean running;
+	Queue<Event> runnables;
+    static EventPump instance;
 
 	private EventPump() {
 		super("EventPump");

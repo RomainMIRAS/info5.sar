@@ -9,32 +9,31 @@ import messages.QueueBroker;
 
 public class EchoServerQueue {
 	
-	public final static int messageSize = 255;
+	public final static int MESSAGE_SIZE = 255;
 	
     public static void main(String[] args) {
     	
     	Runnable serverRunnable = new Runnable() {
+			@Override
  		   public void run() {
  			   IQueueBroker queueBroker = new QueueBroker("server");
  			   MyQueueAcceptListener listener = new MyQueueAcceptListener();
  				boolean bound = queueBroker.bind(8080, listener);
  				
- 				if (!bound) {
+ 				if (!bound)
  					System.out.println("Server failed to bind");
- 					return;
- 				}
             }
         };
         
  		Runnable clientRunnable = new Runnable() {
+			@Override
  			public void run() {
  				IQueueBroker queueBroker = new QueueBroker("client");
  				MyQueueConnectListener listener = new MyQueueConnectListener();
  				boolean connected = queueBroker.connect("server", 8080, listener);
- 				if (!connected) {
+
+ 				if (!connected)
  					System.out.println("Client failed to connect");
- 					return;
- 				}
  			}
  		};
  		
@@ -42,11 +41,8 @@ public class EchoServerQueue {
  		mainTask.post(serverRunnable);
  		mainTask.post(clientRunnable);
  		EventPump.getInstance().start();
-   
     }
 }
-
-
 
 class MyEchoServerQueueListener implements IMessageQueue.Listener {
 	
@@ -59,8 +55,10 @@ class MyEchoServerQueueListener implements IMessageQueue.Listener {
 	@Override
 	public void received(byte[] bytes) {
 		System.out.println("Server received message");
+
         try {
             boolean sent = queue.send(new Message(bytes));
+
 			if (!sent) {
 				System.out.println("Server failed to send response");
 			}
@@ -82,7 +80,7 @@ class MyEchoServerQueueListener implements IMessageQueue.Listener {
 
 class MyEchoClientQueueListener implements IMessageQueue.Listener {
 	
-	private IMessageQueue queue;
+	private final IMessageQueue queue;
 	
 	public MyEchoClientQueueListener(IMessageQueue queue) {
 		this.queue = queue;
@@ -92,8 +90,7 @@ class MyEchoClientQueueListener implements IMessageQueue.Listener {
 	public void received(byte[] bytes) {
 		System.out.println("Client received response");
 		
-		// Check if the response is correct
-		int messageSize = EchoServerQueue.messageSize;
+		int messageSize = EchoServerQueue.MESSAGE_SIZE;
 		byte[] messageContent = new byte[messageSize];
 		for (int i = 0; i < messageSize; i++) {
 			messageContent[i] = (byte) (i + 1);
@@ -124,10 +121,10 @@ class MyEchoClientQueueListener implements IMessageQueue.Listener {
 }	
 
 class MyQueueAcceptListener implements IQueueBroker.AcceptListener {
-	
 	@Override
 	public void accepted(IMessageQueue queue) {
 		System.out.println("Server accepted connection");
+
 		MyEchoServerQueueListener listener = new MyEchoServerQueueListener(queue);
 		queue.setListener(listener);
 	}
@@ -135,11 +132,11 @@ class MyQueueAcceptListener implements IQueueBroker.AcceptListener {
 }
 
 class MyQueueConnectListener implements IQueueBroker.ConnectListener {
-
 	@Override
 	public void connected(IMessageQueue queue) {
 		System.out.println("Connection established for client");
-		int messageSize = EchoServerQueue.messageSize;
+		
+		int messageSize = EchoServerQueue.MESSAGE_SIZE;
 		byte[] messageContent = new byte[messageSize];
 		for (int i = 0; i < messageSize; i++) {
 			messageContent[i] = (byte) (i + 1);

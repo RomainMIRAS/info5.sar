@@ -1,11 +1,6 @@
 package ichannels;
 
 public interface IChannel {
-
-	public boolean write(byte[] bytes, int offset, int length, WriteListener listener);
-
-	public int read(byte[] bytes, int offset, int length);
-
 	interface ReadListener {
 		void available();
 	}
@@ -18,9 +13,9 @@ public interface IChannel {
 		void disconnected();
 	}
 
+	public boolean write(byte[] bytes, int offset, int length, WriteListener listener);
+	public int read(byte[] bytes, int offset, int length);
 	public void setReadListener(ReadListener listener);
-
 	public boolean disconnected();
-
 	public void disconnect(DisconnectListener listener);
 }

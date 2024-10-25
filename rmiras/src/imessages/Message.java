@@ -49,10 +49,18 @@ public class Message {
 		return length;
 	}
 
+	/**
+	 * Get the remaining bytes of this message
+	 */
 	public boolean messageFullySent() {
 		return length == offset;
 	}
 
+	/**
+	 * Update the offset of this message
+	 * 
+	 * @param offset Offset
+	 */
 	public void updateSendinfo(int offset) {
 		this.offset += offset;
 	}

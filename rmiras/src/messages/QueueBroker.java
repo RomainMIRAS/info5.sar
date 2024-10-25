@@ -6,7 +6,6 @@ import ichannels.IChannel;
 import imessages.IQueueBroker;
 
 public class QueueBroker implements IQueueBroker {
-
 	private String name;
 	private Broker broker;
 
@@ -51,7 +50,6 @@ public class QueueBroker implements IQueueBroker {
 	}
 
 	private class MyConnectListener implements IBroker.ConnectListener {
-
 		private ConnectListener listener;
 
 		public MyConnectListener(ConnectListener listener) {

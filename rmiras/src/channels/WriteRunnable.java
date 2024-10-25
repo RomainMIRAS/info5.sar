@@ -12,14 +12,14 @@ public class WriteRunnable implements Runnable {
 	private WriteListener listener;
 
 	public WriteRunnable(byte[] bytes, int offset, int length, CircularBuffer outputBuffer, Channel channel,
-			WriteListener listener) {
-		this.bytes = bytes;
-		this.offset = offset;
-		this.length = length;
-		this.outputBuffer = outputBuffer;
-		this.channel = channel;
-		this.listener = listener;
-	}
+		WriteListener listener) {
+			this.bytes = bytes;
+			this.offset = offset;
+			this.length = length;
+			this.outputBuffer = outputBuffer;
+			this.channel = channel;
+			this.listener = listener;
+		}
 
 	@Override
 	public void run() {
@@ -38,5 +38,4 @@ public class WriteRunnable implements Runnable {
 			channel.remoteChannel.listener.available();
 		}
 	}
-
 }

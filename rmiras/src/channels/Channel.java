@@ -73,5 +73,4 @@ public class Channel implements IChannel {
 	public void setReadListener(ReadListener listener) {
 		this.listener = listener;
 	}
-
 }

@@ -9,15 +9,13 @@ public class Task {
 	static Task current = null;
 	Set<Event> events;
 	EventPump eventPump;
-	Task myCreator;
-	private String name;
+	String name;
 	
 	public Task(String name) {
 		this.name = name;
 		this.events = new HashSet<>();
 		alive = true;
 		eventPump = EventPump.getInstance();
-		myCreator = current;
 	}
 	
 	/**

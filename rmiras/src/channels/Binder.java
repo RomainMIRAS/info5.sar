@@ -6,8 +6,8 @@ import ichannels.IBroker.ConnectListener;
 import ichannels.IChannel;
 
 public class Binder {
-	private Task task;
-	private AcceptRunnable acceptRunnable;
+	Task task;
+	AcceptRunnable acceptRunnable;
 	Channel acceptChannel;
 	Channel connectChannel;
 	boolean alreadyAccepted;
@@ -17,7 +17,6 @@ public class Binder {
 		task = new Task("Accept Task on " + port);
 		alreadyAccepted = false;
 		this.listener = listener;
-
 		acceptRunnable = new AcceptRunnable(this);
 	}
 
@@ -58,5 +57,4 @@ public class Binder {
 	void acceptConnection() {
 		this.listener.accepted(acceptChannel);
 	}
-
 }

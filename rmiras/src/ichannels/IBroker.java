@@ -1,13 +1,6 @@
 package ichannels;
 
 public interface IBroker {
-
-	boolean unbind(int port);
-
-	boolean bind(int port, AcceptListener listener);
-
-	boolean connect(String name, int port, ConnectListener listener);
-
 	interface AcceptListener {
 		void accepted(IChannel queue);
 	}
@@ -18,10 +11,8 @@ public interface IBroker {
 		void refused();
 	}
 
-	/**
-	 * Get the name of the broker.
-	 * 
-	 * @return the name of the broker
-	 */
+	boolean unbind(int port);
+	boolean bind(int port, AcceptListener listener);
+	boolean connect(String name, int port, ConnectListener listener);
 	String name();
 }
