@@ -31,9 +31,13 @@ public class Binder {
 				// Do nothing
 			}
 		};
-
-		acceptChannel.disconnect(disconnectListener);
-		connectChannel.disconnect(disconnectListener);
+		if (acceptChannel != null) {
+			acceptChannel.disconnect(disconnectListener);
+		}
+		
+		if (connectChannel != null) {
+			connectChannel.disconnect(disconnectListener);
+		}
 		task.kill();
 	}
 

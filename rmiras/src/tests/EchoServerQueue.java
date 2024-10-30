@@ -1,5 +1,8 @@
 package tests;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import event.EventPump;
 import event.Task;
 import imessages.IMessageQueue;
@@ -8,46 +11,110 @@ import imessages.Message;
 import messages.QueueBroker;
 
 public class EchoServerQueue {
-	
-	public final static int MESSAGE_SIZE = 255;
-	
-    public static void main(String[] args) {
-    	
-    	Runnable serverRunnable = new Runnable() {
-			@Override
- 		   public void run() {
- 			   IQueueBroker queueBroker = new QueueBroker("server");
- 			   MyQueueAcceptListener listener = new MyQueueAcceptListener();
- 				boolean bound = queueBroker.bind(8080, listener);
- 				
- 				if (!bound)
- 					System.out.println("Server failed to bind");
-            }
-        };
-        
- 		Runnable clientRunnable = new Runnable() {
-			@Override
- 			public void run() {
- 				IQueueBroker queueBroker = new QueueBroker("client");
- 				MyQueueConnectListener listener = new MyQueueConnectListener();
- 				boolean connected = queueBroker.connect("server", 8080, listener);
 
- 				if (!connected)
- 					System.out.println("Client failed to connect");
- 			}
- 		};
- 		
- 		Task mainTask = new Task("Main Test Queue");
- 		mainTask.post(serverRunnable);
- 		mainTask.post(clientRunnable);
- 		EventPump.getInstance().start();
-    }
+	public final static int MESSAGE_SIZE = 255;
+
+	public static void main(String[] args) {
+
+		WorkingMultipleClientSending();
+		
+		ServerStopBinding();
+
+		// Démarrage du système d'événements
+		EventPump.getInstance().start();
+	}
+	
+	private static void ServerStopBinding() {
+		// Initialisation de la tâche principale
+		Task mainTask = new Task("Test Queue - Server Stop Binding");
+
+		// Lancement du serveur
+		Runnable serverRunnable = new Runnable() {
+			@Override
+			public void run() {
+				IQueueBroker broker = new QueueBroker("serverStopBinding");
+				MyQueueAcceptListener listener = new MyQueueAcceptListener();
+				boolean bound = broker.bind(8080, listener);
+
+				if (!bound) {
+					throw new RuntimeException("Server failed to bind");
+				}
+
+				broker.unbind(8080);
+
+			}
+		};
+		mainTask.post(serverRunnable);
+
+		// Création d'un client
+		Runnable clientRunnable = new Runnable() {
+			@Override
+			public void run() {
+				IQueueBroker broker = new QueueBroker("clientStopBinding");
+				MyQueueConnectListener listener = new MyQueueConnectListener();
+				boolean connected = broker.connect("serverStopBinding", 8080, listener);
+
+				if (!connected) {
+					throw new RuntimeException("Client failed to connect");
+				}
+			}
+		};
+		mainTask.post(clientRunnable);
+	}
+
+	private static void WorkingMultipleClientSending() {
+		// Initialisation de la tâche principale
+		Task mainTask = new Task("Test Queue - Working Multiple Client Sending");
+
+		// Lancement du serveur
+		Runnable serverRunnable = new Runnable() {
+			@Override
+			public void run() {
+				IQueueBroker broker = new QueueBroker("serverWorkingMultipleClientSending");
+				MyQueueAcceptListener listener = new MyQueueAcceptListener();
+				boolean bound = broker.bind(8080, listener);
+
+				if (!bound) {
+					throw new RuntimeException("Server failed to bind");
+				}
+			}
+		};
+		mainTask.post(serverRunnable);
+
+		// Création de plusieurs clients
+		List<Runnable> clientRunnables = new ArrayList<>();
+		int clientCount = 5;
+
+		for (int i = 0; i < clientCount; i++) {
+			final int clientId = i;
+
+			Runnable clientRunnable = new Runnable() {
+				@Override
+				public void run() {
+					IQueueBroker broker = new QueueBroker("client" + clientId);
+					MyQueueConnectListener listener = new MyQueueConnectListener();
+					boolean connected = broker.connect("serverWorkingMultipleClientSending", 8080, listener);
+
+					if (!connected) {
+						throw new RuntimeException("Client failed to connect");
+					}
+				}
+			};
+
+			clientRunnables.add(clientRunnable);
+		}
+		
+		for (Runnable clientRunnable : clientRunnables) {
+			mainTask.post(clientRunnable);
+		}
+		
+	}
 }
 
 class MyEchoServerQueueListener implements IMessageQueue.Listener {
-	
+
 	private IMessageQueue queue;
-	
+
 	public MyEchoServerQueueListener(IMessageQueue queue) {
 		this.queue = queue;
 	}
@@ -56,15 +123,15 @@ class MyEchoServerQueueListener implements IMessageQueue.Listener {
 	public void received(byte[] bytes) {
 		System.out.println("Server received message");
 
-        try {
-            boolean sent = queue.send(new Message(bytes));
+		try {
+			boolean sent = queue.send(new Message(bytes));
 
 			if (!sent) {
-				System.out.println("Server failed to send response");
+				throw new RuntimeException("Server failed to send response");
 			}
-        } catch (Exception e) {
-        	System.out.println("Server failed to send message: " + e.getMessage());
-        }
+		} catch (Exception e) {
+			throw new RuntimeException("Server failed to send message: " + e.getMessage());
+		}
 	}
 
 	@Override
@@ -79,9 +146,9 @@ class MyEchoServerQueueListener implements IMessageQueue.Listener {
 }
 
 class MyEchoClientQueueListener implements IMessageQueue.Listener {
-	
+
 	private final IMessageQueue queue;
-	
+
 	public MyEchoClientQueueListener(IMessageQueue queue) {
 		this.queue = queue;
 	}
@@ -89,22 +156,21 @@ class MyEchoClientQueueListener implements IMessageQueue.Listener {
 	@Override
 	public void received(byte[] bytes) {
 		System.out.println("Client received response");
-		
+
 		int messageSize = EchoServerQueue.MESSAGE_SIZE;
 		byte[] messageContent = new byte[messageSize];
 		for (int i = 0; i < messageSize; i++) {
 			messageContent[i] = (byte) (i + 1);
 		}
-		
+
 		for (int i = 0; i < messageSize; i++) {
 			if (bytes[i] != messageContent[i]) {
-				System.out.println("Client received incorrect response");
-				return;
+				throw new RuntimeException("Client received incorrect response");
 			}
 		}
-		
+
 		queue.close();
-		
+
 		System.out.println("Test passed");
 	}
 
@@ -117,8 +183,8 @@ class MyEchoClientQueueListener implements IMessageQueue.Listener {
 	public void sent(Message message) {
 		System.out.println("Client sent message");
 	}
-	
-}	
+
+}
 
 class MyQueueAcceptListener implements IQueueBroker.AcceptListener {
 	@Override
@@ -128,33 +194,33 @@ class MyQueueAcceptListener implements IQueueBroker.AcceptListener {
 		MyEchoServerQueueListener listener = new MyEchoServerQueueListener(queue);
 		queue.setListener(listener);
 	}
-	
+
 }
 
 class MyQueueConnectListener implements IQueueBroker.ConnectListener {
 	@Override
 	public void connected(IMessageQueue queue) {
 		System.out.println("Connection established for client");
-		
+
 		int messageSize = EchoServerQueue.MESSAGE_SIZE;
 		byte[] messageContent = new byte[messageSize];
 		for (int i = 0; i < messageSize; i++) {
 			messageContent[i] = (byte) (i + 1);
 		}
-		
+
 		MyEchoClientQueueListener listener = new MyEchoClientQueueListener(queue);
 		queue.setListener(listener);
 
 		Message message = new Message(messageContent, 0, messageSize);
 		boolean sent = queue.send(message);
 		if (!sent) {
-			System.out.println("Client failed to send message");
-		}		
+			throw new RuntimeException("Client failed to send message");
+		}
 	}
 
 	@Override
 	public void refused() {
 		System.out.println("Connection refused");
 	}
-	
+
 }
