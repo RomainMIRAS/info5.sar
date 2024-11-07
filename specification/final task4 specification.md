@@ -1,6 +1,6 @@
 # Task 4: specification (full events)
 
-The aim of Task4 is to develop a full-duplex communication framework using **event-driven programming**. Unlike thread-based systems, this design is operating **non-blockingly**. Responses and operations are driven by **events**, ensuring that no method blocks execution, and responses are handled via **listeners**.
+The aim of Task 4 is to develop a full-duplex communication framework using **event-driven programming**. Unlike thread-based systems, this design is operating **non-blockingly**. Responses and operations are driven by **events**, ensuring that no method blocks execution, and responses are handled via **listeners**.
 
 The core components include:
 
@@ -46,15 +46,18 @@ Attempts to connect to another task using broker's name and port. The ConnectLis
 
 The AcceptListener is responsible for handling incoming connection requests.
 
-`void accepted(Channel channel)`: Called when a new connection is successfully established. The shared channel is passed in parameters. 
+`void accepted(Channel channel)`:
+Called when a new connection is successfully established. The shared channel is passed in parameters. 
 
 ##### ConnectListener
 
 The ConnectListener handles outgoing connection attempts and their results.
 
-`void connected(Channel channel)`: Called when a connection has been accepted. The shared channel is passed in parameters. 
+`void connected(Channel channel)`:
+Called when a connection has been accepted. The shared channel is passed in parameters. 
 
-`void refused()`: Called when a connection is refused.
+`void refused()`:
+Called when a connection is refused.
 
 ### QueueBroker
 
@@ -68,15 +71,18 @@ The QueueBroker maintains the same method signatures as the Broker class, but it
 
 The AcceptListener is responsible for handling incoming connection requests.
 
-`void accepted(MessageQueue mq)`: Called when a new connection is successfully established. The shared message queue is passed in parameters. 
+`void accepted(MessageQueue mq)`:
+Called when a new connection is successfully established. The shared message queue is passed in parameters. 
 
 ##### ConnectListener
 
 The ConnectListener handles outgoing connection attempts and their results.
 
-`void connected(MessageQueue mq)`: Called when a connection has been accepted. The shared message queue is passed in parameters. 
+`void connected(MessageQueue mq)`:
+Called when a connection has been accepted. The shared message queue is passed in parameters. 
 
-`void refused()`: Called when a connection is refused.
+`void refused()`:
+Called when a connection is refused.
 
 ## Reading / Writing using Channel
 
@@ -88,25 +94,32 @@ The writing process has multiple issues such has the definition of the ownership
 
 ##### Methods
 
-`boolean write(byte[] bytes, int offset, int length, WriteListener listener)`: Attempts to write a specified range of bytes from the provided byte array to the channel. It returns true if the write operation is initiated successfully, and false if it fails.
+`boolean write(byte[] bytes, int offset, int length, WriteListener listener)`:
+Attempts to write a specified range of bytes from the provided byte array to the channel. It returns true if the write operation is initiated successfully, and false if it fails.
 
-`int read(byte[] bytes, int offset, int length)`: Read a specified range of bytes from the channel. It returns the number of bytes read.
+`int read(byte[] bytes, int offset, int length)`:
+Read a specified range of bytes from the channel. It returns the number of bytes read.
 
-`void disconnect(DisconnectListener listener)`: Initiates the process of disconnecting the channel. This method triggers a background task that marks the channel as disconnected and notifies the associated listener about the disconnection event.
+`void disconnect(DisconnectListener listener)`:
+Initiates the process of disconnecting the channel. This method triggers a background task that marks the channel as disconnected and notifies the associated listener about the disconnection event.
 
-`boolean disconnected()`: Returns true if the channel is currently disconnected, and false otherwise.
+`boolean disconnected()`:
+Returns true if the channel is currently disconnected, and false otherwise.
 
 ##### ReadListener
 
-`void available()`: Triggered when there is data available to read from the Channel.
+`void available()`:
+Triggered when there is data available to read from the Channel.
 
 ##### WriteListener
 
-`void written(int bytesWritten)`: Triggered when a specified number of bytes have been successfully written on the Channel.
+`void written(int bytesWritten)`:
+Triggered when a specified number of bytes have been successfully written on the Channel.
 
 ##### DisconnectListener
 
-`void disconnected()`: Triggered when the channel is disconnected.
+`void disconnected()`:
+Triggered when the channel is disconnected.
 
 ## Sending / Receiving using MessageQueue
 
@@ -116,9 +129,11 @@ The **Message** class encapsulates the data that will be sent through the Messag
 
 ##### Constructor
 
-```Message(byte[] bytes)```: Initializes a Message using the entire byte array.
+```Message(byte[] bytes)```:
+Initializes a Message using the entire byte array.
 
-```Message(byte[] bytes, int offset, int length)```: Initializes a Message using only part of the byte array, starting at the specified offset and continuing for the specified length.
+```Message(byte[] bytes, int offset, int length)```:
+Initializes a Message using only part of the byte array, starting at the specified offset and continuing for the specified length.
 
 
 ### MessageQueue
