@@ -6,9 +6,9 @@ This repository contains resources and source code for the **info5.sar** project
 - **/task1**: Eclipse project containing Threaded Channel/Broker + Threaded Message Overlay
 - **/task3**: Eclipse project containing Threaded Channel + Mixed Thread/Event Message Overlay
 - **/task4**: Eclipse project containing Full Event Message Layer (Made by MIRAS Romain)
-- **/rmiras**: Eclipse project containing Full Event Message Layer (Made by Authors)
-- **/design**: Folder containing designs for each task.
-- **/specification**: Folder containing specifications for each task.
+- **/rmiras**: Eclipse project containing Full Event Message Layer (Made by our group ARLE Alexandre - DEL MEDICO Rémi - MIRAS Romain)
+- **/design**: Folder containing designs for each task (Including the group design).
+- **/specification**: Folder containing specifications for each task (Including the group specification).
 
 *Note: Each Eclipse project contains a test package with an EchoServer class having a main method that tests the sockets with a simple send/receive test.*
 
@@ -18,7 +18,7 @@ This project is an Full Event Communication Layer made in Java with two distinct
 - A bit-sending layer (Channel/Broker)
 - A message sending layer ( QueueBroker/MessageQueue) 
   
-The files that follow contain the final project produced by all the authors :
+The files that follow contain the final project produced by our group :
 
 - [Specification](./specification/final%20task4%20specification.md)
 - [Design](./design/final%20task4%20design.md)
